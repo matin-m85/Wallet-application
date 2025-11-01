@@ -1,0 +1,121 @@
+version: "3.9"
+
+# =====================================================
+# 🚀 MULTI-SERVICE STACK: Wallet + Discount + Gateway
+# =====================================================
+
+services:
+  # ==================== 💾 DATABASES ====================
+  # ------------------------------------------------------
+  # 🪙 Wallet Database (PostgreSQL)
+  # ------------------------------------------------------
+  wallet-db:
+    image: docker.arvancloud.ir/postgres:15-alpine
+    container_name: wallet-db
+    restart: always
+    environment:
+      POSTGRES_USER: wallet_user
+      POSTGRES_PASSWORD: wallet_pass
+      POSTGRES_DB: wallet_db
+    volumes:
+      - wallet_data:/var/lib/postgresql/data
+    networks:
+      - wallet_net
+    ports:
+      - "5433:5432"
+  # ------------------------------------------------------
+  # 🎟️ Discount Database (PostgreSQL)
+  # ------------------------------------------------------
+  discount-db:
+    image: docker.arvancloud.ir/postgres:15-alpine
+    container_name: discount-db
+    restart: always
+    environment:
+      POSTGRES_USER: discount_user
+      POSTGRES_PASSWORD: discount_pass
+      POSTGRES_DB: discount_db
+    volumes:
+      - discount_data:/var/lib/postgresql/data
+    networks:
+      - discount_net
+    ports:
+      - "5434:5432"
+
+  # ==================== 🧩 SERVICES ====================
+  # ------------------------------------------------------
+  # 💰 Wallet Service
+  # ------------------------------------------------------
+  wallet-service:
+    build:
+      context: ./wallet-service
+      dockerfile: Dockerfile
+    container_name: wallet-service
+    restart: always
+    environment:
+      - DB_HOST=wallet-db
+      - DB_PORT=5432
+      - DB_USER=wallet_user
+      - DB_PASSWORD=wallet_pass
+      - DB_NAME=wallet_db
+      - PORT=8081
+    depends_on:
+      - wallet-db
+    networks:
+      - wallet_net
+      - shared_net
+    ports:
+      - "8081:8081"
+  # ------------------------------------------------------
+  # 🎫 Discount Service
+  # ------------------------------------------------------
+  discount-service:
+    build:
+      context: ./discount-service
+      dockerfile: Dockerfile
+    container_name: discount-service
+    restart: always
+    environment:
+      - DB_HOST=discount-db
+      - DB_PORT=5432
+      - DB_USER=discount_user
+      - DB_PASSWORD=discount_pass
+      - DB_NAME=discount_db
+      - PORT=8080
+    depends_on:
+      - discount-db
+    networks:
+      - discount_net
+      - shared_net
+    ports:
+      - "8080:8080"
+  # ------------------------------------------------------
+  # 🌐 API Gateway
+  # ------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    restart: always
+    environment:
+      - WALLET_SERVICE_URL=http://wallet-service:8081
+      - DISCOUNT_SERVICE_URL=http://discount-service:8080
+      - PORT=8082
+    depends_on:
+      - wallet-service
+      - discount-service
+    networks:
+      - shared_net
+    ports:
+      - "8082:8082"
+
+# ==================== 🌉 NETWORKS ====================
+networks:
+  wallet_net:
+  discount_net:
+  shared_net:
+
+# ==================== 📦 VOLUMES ====================
+volumes:
+  wallet_data:
+  discount_data:
