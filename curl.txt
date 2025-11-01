@@ -1,0 +1,47 @@
+
+
+🩺 Health Check
+curl http://localhost:8082/health
+
+
+//////////////////////////////💰 Wallet API Tests//////////////////////////////
+
+
+# 🪙 Create a wallet for the user
+
+# 💵 Add balance to the wallet
+curl -X POST http://localhost:8082/api/wallet/redeem \
+     -H "Content-Type: application/json" \
+     -d '{
+       "phone": "09120000000",
+       "amount": 50000,
+       "reference": "initial-topup"
+     }'
+
+
+# 📊 Get wallet information
+curl http://localhost:8082/api/wallet/balance/09120000000
+
+
+# 📜 List all redeemed wallets
+curl http://localhost:8082/api/wallet/redeemed
+
+
+
+//////////////////////////////🎁 Discount API Tests/////////////////////////////
+
+
+# 🆕 Create a new discount
+curl -X POST http://localhost:8082/api/discount/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "FALL2025",
+    "description": "Autumn Discount 2025 🍂",
+    "percent": 20,
+    "max_use": 5
+  }'
+
+
+# 🔍 Get discount details
+curl http://localhost:8082/api/discount/FALL2025
+
